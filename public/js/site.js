@@ -65,6 +65,7 @@
                 living = window.LivingPortrait.create(canvas, {
                     image: stage.dataset.portrait,
                     depth: stage.dataset.depthMap,
+                    closed: stage.dataset.closed || null,
                     meta: JSON.parse(stage.dataset.meta || 'null'),
                 });
             } catch (err) {

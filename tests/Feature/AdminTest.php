@@ -171,6 +171,25 @@ class AdminTest extends TestCase
         $this->get('/')->assertSee('data-mode="layers"', false)->assertDontSee('living-portrait.js');
     }
 
+    public function test_new_portrait_without_closed_eyes_drops_the_old_closed_image(): void
+    {
+        $this->actingAs($this->admin);
+        $this->assertNotNull(Profile::current()->hero_closed);
+
+        $this->put('/admin/profile', [
+            'name' => 'M', 'title' => 'T',
+            'hero_portrait' => UploadedFile::fake()->image('me.png', 500, 625),
+        ])->assertSessionHasNoErrors();
+
+        $profile = Profile::current();
+        $this->assertNull($profile->hero_closed);
+        $this->assertStringStartsWith('uploads/portrait/', $profile->hero_portrait);
+        $this->assertFileExists(public_path('images/portrait/portrait-closed.webp'), 'Bundled files are never deleted.');
+        $this->get('/')->assertDontSee('data-closed=', false);
+
+        File::delete(public_path($profile->hero_portrait));
+    }
+
     public function test_eye_picker_meta_is_normalised(): void
     {
         $this->actingAs($this->admin);

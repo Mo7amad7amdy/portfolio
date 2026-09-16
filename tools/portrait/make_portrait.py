@@ -6,6 +6,7 @@ Build the "living portrait" assets for the portfolio hero from one photo.
 
 Writes to public/images/portrait/:
     portrait.webp        enhanced, background-removed cut-out
+    portrait-closed.webp the same cut-out with the eyes closed (realistic blink)
     portrait-depth.png   Depth Anything V2 depth map (white = near)
     meta.json            eye + head positions (paste into the dashboard if needed)
 and public/images/profile.jpg (studio headshot used in the About section).
@@ -91,6 +92,74 @@ def find_eyes(rgb: np.ndarray):
     return (fx, fy, fw, fh), pts
 
 
+def close_eyes(rgba: np.ndarray, eyes_norm: list) -> np.ndarray:
+    """Paint closed eyes: find each eye opening, inpaint it with the surrounding lid skin,
+    shade the lid and draw a thin lash line along the lower lid."""
+    H, W = rgba.shape[:2]
+    bgr = cv2.cvtColor(np.ascontiguousarray(rgba[..., :3]), cv2.COLOR_RGB2BGR)
+    out = bgr.copy()
+    for e in eyes_norm:
+        cx, cy, rx, ry = e["x"] * W, e["y"] * H, e["rx"] * W, e["ry"] * H
+        x0, x1 = int(cx - rx * 1.6), int(cx + rx * 1.6)
+        y0, y1 = int(cy - ry * 2.6), int(cy + ry * 2.2)
+        roi = bgr[y0:y1, x0:x1]
+        lab = cv2.cvtColor(roi, cv2.COLOR_BGR2LAB).astype(np.float32)
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        ell = ((xx - cx) / (rx * 1.2)) ** 2 + ((yy - cy) / (ry * 0.8)) ** 2 < 1
+        ring = (((xx - cx) / (rx * 1.5)) ** 2 + ((yy - cy) / (ry * 2.0)) ** 2 < 1) & ~ell
+        Lr, Ar, Br = [np.median(lab[..., i][ring]) for i in range(3)]
+        L, A, B = lab[..., 0], lab[..., 1], lab[..., 2]
+        chroma, chroma_r = np.hypot(A - 128, B - 128), np.hypot(Ar - 128, Br - 128)
+        op = (ell & ((L < Lr - 38) | (chroma < chroma_r * 0.55))).astype(np.uint8) * 255
+        op = cv2.morphologyEx(op, cv2.MORPH_CLOSE, np.ones((5, 9), np.uint8))
+        n, cc, stats, _ = cv2.connectedComponentsWithStats(op)
+        if n < 2:
+            continue
+        op = (cc == 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])).astype(np.uint8) * 255
+        cnts, _ = cv2.findContours(op, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        mask = np.zeros_like(op)
+        cv2.fillPoly(mask, [cv2.convexHull(max(cnts, key=cv2.contourArea))], 255)
+        mask = cv2.dilate(mask, np.ones((5, 7), np.uint8))
+
+        f = cv2.inpaint(roi, mask, 9, cv2.INPAINT_TELEA).astype(np.float32)
+        ys, xs = np.where(mask > 0)
+        top, bot = ys.min(), ys.max()
+        grad = np.clip((yy - y0 - top) / max(bot - top, 1), 0, 1)
+        m = cv2.GaussianBlur(mask, (0, 0), 1.6).astype(np.float32)[..., None] / 255
+        f *= np.where(m > 0, (1 - 0.18 * grad ** 1.5)[..., None], 1)
+        hp = roi.astype(np.float32) - cv2.GaussianBlur(roi.astype(np.float32), (0, 0), 2)
+        shift = int((bot - top) * 0.9) + 4
+        hp_s = np.zeros_like(hp)
+        hp_s[shift:] = hp[:-shift]
+        f += hp_s * 0.6
+
+        # lash line: smooth quadratic along the lower edge of the opening
+        lx, rxp = xs.min() + 3, xs.max() - 3
+        arc_x = np.arange(lx, rxp + 1)
+        bottom = np.array([ys[xs == c].max() if np.any(xs == c) else np.nan for c in arc_x], float)
+        ok = ~np.isnan(bottom)
+        arc_y = np.polyval(np.polyfit(arc_x[ok], bottom[ok], 2), arc_x) - 3.5
+        SS = 4
+        big_l = np.zeros((mask.shape[0] * SS, mask.shape[1] * SS), np.uint8)
+        big_s = big_l.copy()
+        pts = (np.stack([arc_x, arc_y], 1) * SS).astype(np.int32)
+        cv2.polylines(big_l, [pts], False, 255, int(1.3 * SS), cv2.LINE_AA)
+        cv2.polylines(big_s, [pts + [0, int(2.5 * SS)]], False, 255, 3 * SS, cv2.LINE_AA)
+        lash = cv2.resize(big_l, mask.shape[::-1], interpolation=cv2.INTER_AREA).astype(np.float32) / 255
+        shadow = cv2.GaussianBlur(cv2.resize(big_s, mask.shape[::-1], interpolation=cv2.INTER_AREA), (0, 0), 1.5)
+        shadow = shadow.astype(np.float32) / 255
+        taper = np.sin(np.pi * np.clip((xx - x0 - lx) / max(rxp - lx, 1), 0, 1)) ** 0.6
+        lash, shadow = (lash * taper)[..., None], (shadow * taper)[..., None]
+        f *= 1 - shadow * 0.25
+        f = f * (1 - lash * 0.66) + np.array([22, 34, 62]) * lash * 0.66
+        m = np.maximum(m, np.clip(lash + shadow, 0, 1))
+        out[y0:y1, x0:x1] = np.clip(roi * (1 - m) + f * m, 0, 255).astype(np.uint8)
+
+    res = rgba.copy()
+    res[..., :3] = cv2.cvtColor(out, cv2.COLOR_BGR2RGB)
+    return res
+
+
 def main(src_path: str) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     bgr = cv2.imread(src_path)
@@ -133,6 +202,11 @@ def main(src_path: str) -> None:
         meta["head"] = {"x": round((fx + fw / 2) / W, 4), "y": round((fy + fh * 0.43) / H, 4),
                         "rx": round(fw * 0.58 / W, 4), "ry": round(fh * 0.82 / H, 4)}
     (OUT / "meta.json").write_text(json.dumps(meta, indent=1))
+
+    if eyes:
+        print("Painting closed eyes...")
+        final = np.array(Image.open(OUT / "portrait.webp").convert("RGBA"))
+        Image.fromarray(close_eyes(final, meta["eyes"])).save(OUT / "portrait-closed.webp", quality=90, method=6)
 
     # studio headshot for the About card
     yy, xx = np.mgrid[0:H, 0:W]

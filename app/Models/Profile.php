@@ -20,7 +20,7 @@ class Profile extends Model
     protected $fillable = [
         'name', 'title', 'tagline', 'summary', 'email', 'phone', 'location',
         'linkedin_url', 'github_url', 'photo', 'hero_head', 'hero_body',
-        'hero_portrait', 'hero_depth', 'hero_meta', 'cv_file', 'open_to_work',
+        'hero_portrait', 'hero_depth', 'hero_closed', 'hero_meta', 'cv_file', 'open_to_work',
     ];
 
     protected function casts(): array

@@ -9,9 +9,12 @@ python tools/portrait/make_portrait.py path/to/photo.jpg
 
 Best input: front-facing, eyes visible, head and shoulders, at least 1000 px wide.
 
-Output goes to `public/images/portrait/` (`portrait.webp`, `portrait-depth.png`, `meta.json`) plus
+Output goes to `public/images/portrait/` (`portrait.webp`, `portrait-depth.png`, `portrait-closed.webp`, `meta.json`) plus
 `public/images/profile.jpg`. If you kept the default paths, just refresh the site. To use different files,
-upload the portrait and the depth map in **Dashboard → Profile & Photo → Living portrait**, then click
+upload the portrait, the depth map and the closed-eyes image in **Dashboard → Profile & Photo → Living portrait**, then click
 the left and right eye on the preview and save.
 
 The first run downloads Depth Anything V2 Small (~100 MB) next to this script (git-ignored).
+
+The closed-eyes image drives the blink: the site reveals it from the top down like a real eyelid.
+Check it before uploading (open it and zoom on the eyes). Without it the blink is drawn procedurally.

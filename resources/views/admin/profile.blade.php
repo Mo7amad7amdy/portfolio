@@ -100,6 +100,17 @@
                     @error('hero_depth')<small class="error">{{ $message }}</small>@enderror
                 </label>
                 <label class="field">
+                    <span>Closed-eyes version <small>(optional · same image with eyes closed, for a realistic blink)</small></span>
+                    <input type="file" name="hero_closed" accept="image/png,image/webp">
+                    @error('hero_closed')<small class="error">{{ $message }}</small>@enderror
+                </label>
+                @if ($profile->hero_closed)
+                    <p class="hint">✓ Closed-eyes image set · <a href="{{ asset($profile->hero_closed) }}" target="_blank">view</a>
+                        · <label class="check" style="display:inline-flex"><input type="checkbox" name="remove_hero_closed" value="1"> remove</label></p>
+                @else
+                    <p class="hint">Without it, the blink is drawn procedurally.</p>
+                @endif
+                <label class="field">
                     <span>Pivot depth <small>(0–1 · parts brighter than this move toward the cursor)</small></span>
                     <input type="number" name="portrait_focus" min="0" max="1" step="0.01" value="{{ old('portrait_focus', $meta['focus'] ?? 0.36) }}">
                     @error('portrait_focus')<small class="error">{{ $message }}</small>@enderror

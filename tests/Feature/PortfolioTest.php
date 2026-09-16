@@ -24,6 +24,7 @@ class PortfolioTest extends TestCase
             ->assertSee('data-face-stage', false)
             ->assertSee('data-mode="living"', false)
             ->assertSee('portrait-depth.png', false)
+            ->assertSee('portrait-closed.webp', false)
             ->assertSee('js/living-portrait.js', false);
     }
 

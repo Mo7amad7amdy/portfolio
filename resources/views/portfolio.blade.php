@@ -96,6 +96,7 @@
                  @if ($heroMode === 'living')
                      data-portrait="{{ asset($profile->hero_portrait) }}"
                      data-depth-map="{{ asset($profile->hero_depth) }}"
+                     @if ($profile->hero_closed) data-closed="{{ asset($profile->hero_closed) }}" @endif
                      data-meta="{{ json_encode($profile->hero_meta) }}"
                  @endif>
                 <div class="halo" data-depth="-0.6" aria-hidden="true"></div>

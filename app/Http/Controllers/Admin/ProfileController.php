@@ -21,6 +21,7 @@ class ProfileController extends Controller
         'hero_body' => ['hero', ['nullable', 'image', 'mimes:png,webp', 'max:4096']],
         'hero_portrait' => ['portrait', ['nullable', 'image', 'mimes:png,webp', 'max:6144']],
         'hero_depth' => ['portrait', ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096']],
+        'hero_closed' => ['portrait', ['nullable', 'image', 'mimes:png,webp', 'max:6144']],
         'cv_file' => ['cv', ['nullable', 'file', 'mimes:pdf', 'max:8192']],
     ];
 
@@ -45,6 +46,7 @@ class ProfileController extends Controller
             'github_url' => ['nullable', 'url', 'max:255'],
             'remove_hero_layers' => ['nullable', 'boolean'],
             'remove_living_portrait' => ['nullable', 'boolean'],
+            'remove_hero_closed' => ['nullable', 'boolean'],
             'hero_meta' => ['nullable', 'json'],
             'portrait_focus' => ['nullable', 'numeric', 'between:0,1'],
         ] + array_map(fn (array $cfg) => $cfg[1], self::UPLOADS));
@@ -59,6 +61,16 @@ class ProfileController extends Controller
             }
         }
 
+        // A new portrait invalidates the old closed-eyes version unless one was uploaded with it.
+        if ($request->hasFile('hero_portrait') && ! $request->hasFile('hero_closed')) {
+            $this->deleteUpload($profile->hero_closed);
+            $data['hero_closed'] = null;
+        }
+        if ($request->boolean('remove_hero_closed')) {
+            $this->deleteUpload($profile->hero_closed);
+            $data['hero_closed'] = null;
+        }
+
         // Removing the layers makes the hero fall back to the tilting photo.
         if ($request->boolean('remove_hero_layers')) {
             $this->deleteUpload($profile->hero_head);
@@ -68,13 +80,14 @@ class ProfileController extends Controller
         if ($request->boolean('remove_living_portrait')) {
             $this->deleteUpload($profile->hero_portrait);
             $this->deleteUpload($profile->hero_depth);
-            $data['hero_portrait'] = $data['hero_depth'] = $data['hero_meta'] = null;
+            $this->deleteUpload($profile->hero_closed);
+            $data['hero_portrait'] = $data['hero_depth'] = $data['hero_closed'] = $data['hero_meta'] = null;
         } elseif (filled($request->input('hero_meta'))) {
             $data['hero_meta'] = $this->portraitMeta($request->input('hero_meta'), $request->input('portrait_focus'));
         } else {
             unset($data['hero_meta']);
         }
-        unset($data['remove_hero_layers'], $data['remove_living_portrait'], $data['portrait_focus']);
+        unset($data['remove_hero_layers'], $data['remove_living_portrait'], $data['remove_hero_closed'], $data['portrait_focus']);
 
         $profile->update($data);
 
