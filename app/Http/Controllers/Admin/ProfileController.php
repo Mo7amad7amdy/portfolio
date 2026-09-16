@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -18,6 +19,8 @@ class ProfileController extends Controller
         'photo' => ['photos', ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096']],
         'hero_head' => ['hero', ['nullable', 'image', 'mimes:png,webp', 'max:4096']],
         'hero_body' => ['hero', ['nullable', 'image', 'mimes:png,webp', 'max:4096']],
+        'hero_portrait' => ['portrait', ['nullable', 'image', 'mimes:png,webp', 'max:6144']],
+        'hero_depth' => ['portrait', ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096']],
         'cv_file' => ['cv', ['nullable', 'file', 'mimes:pdf', 'max:8192']],
     ];
 
@@ -41,6 +44,9 @@ class ProfileController extends Controller
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'github_url' => ['nullable', 'url', 'max:255'],
             'remove_hero_layers' => ['nullable', 'boolean'],
+            'remove_living_portrait' => ['nullable', 'boolean'],
+            'hero_meta' => ['nullable', 'json'],
+            'portrait_focus' => ['nullable', 'numeric', 'between:0,1'],
         ] + array_map(fn (array $cfg) => $cfg[1], self::UPLOADS));
 
         $data['open_to_work'] = $request->boolean('open_to_work');
@@ -59,11 +65,63 @@ class ProfileController extends Controller
             $this->deleteUpload($profile->hero_body);
             $data['hero_head'] = $data['hero_body'] = null;
         }
-        unset($data['remove_hero_layers']);
+        if ($request->boolean('remove_living_portrait')) {
+            $this->deleteUpload($profile->hero_portrait);
+            $this->deleteUpload($profile->hero_depth);
+            $data['hero_portrait'] = $data['hero_depth'] = $data['hero_meta'] = null;
+        } elseif (filled($request->input('hero_meta'))) {
+            $data['hero_meta'] = $this->portraitMeta($request->input('hero_meta'), $request->input('portrait_focus'));
+        } else {
+            unset($data['hero_meta']);
+        }
+        unset($data['remove_hero_layers'], $data['remove_living_portrait'], $data['portrait_focus']);
 
         $profile->update($data);
 
         return back()->with('status', 'Profile saved.');
+    }
+
+    /**
+     * Normalises the eye picker's JSON: two eyes and an optional head ellipse,
+     * every value clamped to the 0–1 image space.
+     */
+    private function portraitMeta(string $json, mixed $focus): array
+    {
+        $meta = json_decode($json, true);
+        $eyes = $meta['eyes'] ?? null;
+
+        if (! is_array($eyes) || count($eyes) !== 2) {
+            throw ValidationException::withMessages(['hero_meta' => 'Mark both eyes on the portrait preview.']);
+        }
+
+        $box = function (mixed $e, array $default): array {
+            $e = is_array($e) ? $e : [];
+            $out = [];
+            foreach ($default as $key => $fallback) {
+                $v = $e[$key] ?? $fallback;
+                $out[$key] = round(min(1, max(0, is_numeric($v) ? (float) $v : $fallback)), 4);
+            }
+
+            return $out;
+        };
+
+        $eyeDefault = ['x' => 0.5, 'y' => 0.3, 'rx' => 0.045, 'ry' => 0.014];
+        $eyes = array_map(fn ($e) => $box($e, $eyeDefault), array_values($eyes));
+        usort($eyes, fn ($a, $b) => $a['x'] <=> $b['x']);
+
+        // Head ellipse defaults to an area around the eyes.
+        $midX = ($eyes[0]['x'] + $eyes[1]['x']) / 2;
+        $span = max(0.05, $eyes[1]['x'] - $eyes[0]['x']);
+        $head = $box($meta['head'] ?? null, [
+            'x' => $midX, 'y' => $eyes[0]['y'] + $span * 0.1, 'rx' => $span * 1.5, 'ry' => $span * 1.7,
+        ]);
+
+        return [
+            'version' => 1,
+            'focus' => is_numeric($focus) ? round((float) $focus, 3) : (float) ($meta['focus'] ?? 0.36),
+            'eyes' => $eyes,
+            'head' => $head,
+        ];
     }
 
     private function store(UploadedFile $file, string $folder): string

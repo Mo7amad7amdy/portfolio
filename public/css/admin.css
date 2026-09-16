@@ -134,6 +134,11 @@ td.strong a { color: var(--text); font-weight: 600; }
 .upload { display: grid; gap: 12px; align-content: start; padding: 16px; border: 1px dashed #ddd3c6; border-radius: 12px; }
 .upload img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 8px; background: #f3eee7; }
 .upload.checker img { background: repeating-conic-gradient(#eee8df 0 25%, #fff 0 50%) 0 0 / 18px 18px; }
+.eye-picker { position: relative; line-height: 0; }
+.eye-picker img { cursor: crosshair; max-height: none; }
+.eye-dot { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #fff; background: rgba(245, 165, 36, .85); box-shadow: 0 0 0 2px rgba(0, 0, 0, .35); pointer-events: none; }
+.form-card > h2 .pill { margin-left: 8px; vertical-align: middle; }
+code { background: #f3eee7; padding: 1px 6px; border-radius: 6px; font-size: .92em; }
 .file-box { padding: 26px 14px; text-align: center; border-radius: 8px; background: #f3eee7; color: var(--muted); overflow-wrap: anywhere; }
 
 .message-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }

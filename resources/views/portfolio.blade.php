@@ -1,5 +1,6 @@
 @php
     $photo = $profile->photo ? asset($profile->photo) : null;
+    $heroMode = $profile->heroMode();
     $orbit = $skillGroups->flatten()->sortByDesc('level')->take(6)->pluck('name');
 @endphp
 <!DOCTYPE html>
@@ -18,7 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/site.css') }}?v={{ filemtime(public_path('css/site.css')) }}">
-    @if ($profile->hasHeroLayers())
+    @if ($heroMode === 'living')
+        <link rel="preload" as="image" href="{{ asset($profile->hero_portrait) }}">
+    @elseif ($heroMode === 'layers')
         <link rel="preload" as="image" href="{{ asset($profile->hero_head) }}">
         <link rel="preload" as="image" href="{{ asset($profile->hero_body) }}">
     @endif
@@ -89,7 +92,12 @@
                 @endif
             </div>
 
-            <div class="hero-visual" data-face-stage data-mode="{{ $profile->hasHeroLayers() ? 'layers' : 'photo' }}">
+            <div class="hero-visual" data-face-stage data-mode="{{ $heroMode }}"
+                 @if ($heroMode === 'living')
+                     data-portrait="{{ asset($profile->hero_portrait) }}"
+                     data-depth-map="{{ asset($profile->hero_depth) }}"
+                     data-meta="{{ json_encode($profile->hero_meta) }}"
+                 @endif>
                 <div class="halo" data-depth="-0.6" aria-hidden="true"></div>
                 <div class="orbit" aria-hidden="true">
                     @foreach ($orbit as $i => $name)
@@ -97,7 +105,10 @@
                     @endforeach
                 </div>
                 <div class="portrait">
-                    @if ($profile->hasHeroLayers())
+                    @if ($heroMode === 'living')
+                        <canvas class="layer layer-canvas" data-living-canvas aria-hidden="true"></canvas>
+                        <img class="layer layer-portrait" data-head src="{{ asset($profile->hero_portrait) }}" alt="{{ $profile->name }}" width="1000" height="1249">
+                    @elseif ($heroMode === 'layers')
                         <img class="layer layer-body" data-body src="{{ asset($profile->hero_body) }}" alt="" width="900" height="1124">
                         <img class="layer layer-head" data-head src="{{ asset($profile->hero_head) }}" alt="{{ $profile->name }}" width="900" height="1124">
                     @elseif ($photo)
@@ -327,6 +338,9 @@
     </div>
 </footer>
 
+@if ($heroMode === 'living')
+<script src="{{ asset('js/living-portrait.js') }}?v={{ filemtime(public_path('js/living-portrait.js')) }}" defer></script>
+@endif
 <script src="{{ asset('js/site.js') }}?v={{ filemtime(public_path('js/site.js')) }}" defer></script>
 </body>
 </html>

@@ -39,6 +39,9 @@ class PortfolioSeeder extends Seeder
             'photo' => 'images/profile.jpg',
             'hero_head' => 'images/hero-head.webp',
             'hero_body' => 'images/hero-body.webp',
+            'hero_portrait' => 'images/portrait/portrait.webp',
+            'hero_depth' => 'images/portrait/portrait-depth.png',
+            'hero_meta' => Profile::DEFAULT_PORTRAIT_META,
             'cv_file' => 'files/Mohammed-Hamdy-CV.pdf',
             'open_to_work' => true,
         ]);

@@ -140,12 +140,65 @@ class AdminTest extends TestCase
     {
         $this->actingAs($this->admin);
 
-        $this->put('/admin/profile', ['name' => 'M', 'title' => 'T', 'remove_hero_layers' => '1'])->assertRedirect();
+        $this->put('/admin/profile', [
+            'name' => 'M', 'title' => 'T', 'remove_hero_layers' => '1', 'remove_living_portrait' => '1',
+        ])->assertRedirect();
 
         $this->assertFalse(Profile::current()->hasHeroLayers());
+        $this->assertFalse(Profile::current()->hasLivingPortrait());
         // Bundled default images are never deleted.
         $this->assertFileExists(public_path('images/hero-head.webp'));
         $this->get('/')->assertSee('data-mode="photo"', false);
+    }
+
+    public function test_living_portrait_is_the_default_hero(): void
+    {
+        $profile = Profile::current();
+
+        $this->assertSame('living', $profile->heroMode());
+        $this->assertFileExists(public_path($profile->hero_portrait));
+        $this->assertFileExists(public_path($profile->hero_depth));
+    }
+
+    public function test_turning_off_living_portrait_falls_back_to_layers(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->put('/admin/profile', ['name' => 'M', 'title' => 'T', 'remove_living_portrait' => '1'])->assertRedirect();
+
+        $this->assertSame('layers', Profile::current()->heroMode());
+        $this->assertFileExists(public_path('images/portrait/portrait.webp'));
+        $this->get('/')->assertSee('data-mode="layers"', false)->assertDontSee('living-portrait.js');
+    }
+
+    public function test_eye_picker_meta_is_normalised(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->put('/admin/profile', [
+            'name' => 'M', 'title' => 'T', 'portrait_focus' => '0.4',
+            // right eye first, one value out of range: the server sorts and clamps.
+            'hero_meta' => json_encode(['eyes' => [
+                ['x' => 0.6, 'y' => 0.3, 'rx' => 0.04, 'ry' => 0.01],
+                ['x' => 0.4, 'y' => 1.7, 'rx' => 0.04, 'ry' => 0.01],
+            ]]),
+        ])->assertSessionHasNoErrors();
+
+        $meta = Profile::current()->hero_meta;
+        $this->assertSame(0.4, $meta['eyes'][0]['x']);
+        $this->assertEquals(1, $meta['eyes'][0]['y']);
+        $this->assertEquals(0.4, $meta['focus']);
+        $this->assertArrayHasKey('head', $meta);
+    }
+
+    public function test_eye_picker_requires_two_eyes(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->put('/admin/profile', [
+            'name' => 'M', 'title' => 'T',
+            'hero_meta' => json_encode(['eyes' => [['x' => 0.4, 'y' => 0.3]]]),
+        ])->assertSessionHasErrors('hero_meta');
     }
 
     public function test_account_password_change_requires_current_password(): void

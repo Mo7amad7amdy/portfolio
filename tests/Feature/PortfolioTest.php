@@ -22,7 +22,9 @@ class PortfolioTest extends TestCase
             ->assertSee('Taqeem')
             ->assertSee('VYA Auction Platform')
             ->assertSee('data-face-stage', false)
-            ->assertSee('hero-head.webp', false);
+            ->assertSee('data-mode="living"', false)
+            ->assertSee('portrait-depth.png', false)
+            ->assertSee('js/living-portrait.js', false);
     }
 
     public function test_home_page_renders_without_any_data(): void

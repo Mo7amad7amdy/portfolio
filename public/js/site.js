@@ -56,6 +56,27 @@
         const depthEls = [...stage.querySelectorAll('[data-depth]')];
         const isLayers = stage.dataset.mode === 'layers';
 
+        // Living portrait (WebGL + depth map). Falls back to tilting the <img> if unavailable.
+        let living = null;
+        let live = false;
+        const canvas = stage.querySelector('[data-living-canvas]');
+        if (stage.dataset.mode === 'living' && canvas && window.LivingPortrait) {
+            try {
+                living = window.LivingPortrait.create(canvas, {
+                    image: stage.dataset.portrait,
+                    depth: stage.dataset.depthMap,
+                    meta: JSON.parse(stage.dataset.meta || 'null'),
+                });
+            } catch (err) {
+                console.warn('[living-portrait]', err);
+            }
+            living?.ready.then(() => {
+                live = true;
+                stage.classList.add('is-live');
+                start();
+            }).catch(() => { living = null; });
+        }
+
         // Tuned for the head/body split: enough turn to read as "looking", small
         // enough that the neck seam never opens up.
         const HEAD = isLayers
@@ -92,9 +113,11 @@
         window.addEventListener('pointermove', (e) => aim(e.clientX, e.clientY), { passive: true });
         document.documentElement.addEventListener('mouseleave', () => { target.x = 0; target.y = 0; start(); });
 
-        const render = () => {
+        const render = (now) => {
             const { x, y } = current;
-            if (head) {
+            if (live) {
+                living.render(x, y, now);
+            } else if (head) {
                 head.style.transform =
                     `translate3d(${(x * HEAD.moveX).toFixed(2)}px, ${(y * HEAD.moveY).toFixed(2)}px, 0) ` +
                     `rotateY(${(x * HEAD.rotY).toFixed(2)}deg) ` +
@@ -126,11 +149,12 @@
 
             current.x += (target.x - current.x) * 0.085;
             current.y += (target.y - current.y) * 0.085;
-            render();
+            render(now);
 
             const settled = Math.abs(target.x - current.x) < 0.0005 && Math.abs(target.y - current.y) < 0.0005;
             const idle = now - lastMove > 4000;
-            if (visible && (!settled || idle) && !document.hidden) {
+            // The living portrait blinks and breathes, so it keeps animating while on screen.
+            if (visible && (!settled || idle || live) && !document.hidden) {
                 requestAnimationFrame(tick);
             } else {
                 running = false;

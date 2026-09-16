@@ -41,7 +41,19 @@ and run `php artisan migrate --seed`.
 
 No Node/Vite build step — CSS and JS are plain files in `public/`.
 
-### How the face-follow works
+### Living portrait (default hero)
+The hero renders your photo with WebGL (`public/js/living-portrait.js`) from two files:
+an enhanced transparent cut-out and a **Depth Anything V2** depth map.
+
+- **3D head turn:** parallax driven by the depth map. The nose moves more than the cheeks and the shoulders counter-move, so it reads as real rotation rather than a flat tilt.
+- **Eyes:** they blink on a natural random rhythm (sometimes a double blink) and glance toward the cursor.
+- **Motion and light:** subtle breathing and head sway, plus a warm key light that follows the cursor using normals from the depth map.
+- **Fallbacks:** without WebGL, or with the feature turned off, it falls back to the head/body layers, then to the tilting photo.
+
+To regenerate from a new photo: `python tools/portrait/make_portrait.py photo.jpg` (see `tools/portrait/README.md`),
+or upload the files in **Dashboard → Profile & Photo → Living portrait** and click both eyes on the preview.
+
+### How the face-follow works (layers fallback)
 Your photo was cut out and split into two transparent layers of the same size:
 the **head** and the **body** (face area filled in behind the head). The head layer pivots around
 the neck with `rotateY/rotateX` toward the cursor, the body follows slightly, and the halo /
