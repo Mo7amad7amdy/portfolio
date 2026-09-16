@@ -1,0 +1,34 @@
+# Run the app from the project root (e.g. http://localhost/portfolio or shared hosting)
+# without "/public" in the URL. Only files inside public/ are ever served directly.
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Pass the Authorization header through (API tokens).
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Already routed to the front controller: stop.
+    RewriteRule ^index\.php$ - [L]
+
+    # Real files in public/ (css, js, images, uploads, CV) are served from there.
+    # %1 = this folder's URL prefix (e.g. /portfolio/), so it also works in a sub-folder.
+    RewriteCond %{REQUEST_URI}::$1 ^(.*?/)(.*)::\2$
+    RewriteCond %{DOCUMENT_ROOT}%1public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # Everything else (including .env, vendor/, storage/ …) goes to Laravel,
+    # so project files can never be downloaded.
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Extra safety if mod_rewrite is off.
+<FilesMatch "^\.|\.(env|log|sqlite|lock|md|bat|xml|json|yml|yaml)$|^artisan$">
+    Require all denied
+</FilesMatch>
+<Files "index.php">
+    Require all granted
+</Files>

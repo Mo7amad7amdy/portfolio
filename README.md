@@ -17,6 +17,15 @@ the portfolio files, then creates `.env`, the SQLite database, and seeds your CV
 → change it immediately in **Dashboard → Account**.
 You can also set `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` before running the seeder.
 
+### Running without `/public` in the URL
+The project root has its own `.htaccess` and `index.php`, so these both work on Apache (Laragon, shared hosting):
+- `http://localhost/portfolio` (sub-folder)
+- a domain whose document root is the project folder
+
+Only files inside `public/` are served; everything else (`.env`, `vendor/`, `storage/`, the database) goes to
+Laravel or is denied. Set `APP_URL` in `.env` to the address you use (e.g. `APP_URL=http://localhost/portfolio`).
+On Nginx, point the server root at `public/` instead; the `.htaccess` files are Apache-only.
+
 ### Using MySQL instead of SQLite
 Create a `portfolio` database in Laragon, then in `.env`:
 ```
