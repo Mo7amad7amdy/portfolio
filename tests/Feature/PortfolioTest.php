@@ -28,6 +28,44 @@ class PortfolioTest extends TestCase
             ->assertSee('js/living-portrait.js', false);
     }
 
+    public function test_home_page_has_seo_and_social_card_tags(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('#<link rel="canonical" href="http[^"]+">#', $html);
+        $this->assertStringContainsString('<meta property="og:type" content="profile">', $html);
+        $this->assertStringContainsString('<meta name="twitter:card" content="summary_large_image">', $html);
+        $this->assertMatchesRegularExpression('#<meta property="og:image" content="([^"]+/images/social/card-[a-f0-9]{12}\.png)">#', $html);
+
+        preg_match('#images/social/card-[a-f0-9]{12}\.png#', $html, $m);
+        $this->assertFileExists(public_path($m[0]));
+        $this->assertSame([1200, 630], array_slice(getimagesize(public_path($m[0])), 0, 2));
+
+        preg_match('#<script type="application/ld\+json">(.+?)</script>#s', $html, $ld);
+        $graph = collect(json_decode($ld[1], true)['@graph'])->keyBy('@type');
+        $this->assertSame('Mohammed Hamdy', $graph['Person']['name']);
+        $this->assertSame('Taqeem', $graph['Person']['worksFor']['name']);
+        $this->assertContains('https://github.com/mo7amad7amdy', $graph['Person']['sameAs']);
+        $this->assertArrayHasKey('ProfilePage', $graph->all());
+    }
+
+    public function test_sitemap_and_manifest(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->get('/sitemap.xml')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+            ->assertSee('<loc>'.url('/').'</loc>', false);
+
+        $this->get('/site.webmanifest')
+            ->assertOk()
+            ->assertJsonPath('short_name', 'Mohammed Hamdy')
+            ->assertJsonCount(2, 'icons');
+    }
+
     public function test_home_page_renders_without_any_data(): void
     {
         $this->get('/')->assertOk();

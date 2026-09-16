@@ -190,6 +190,60 @@ class AdminTest extends TestCase
         File::delete(public_path($profile->hero_portrait));
     }
 
+    public function test_seo_fields_are_saved_and_used(): void
+    {
+        $this->actingAs($this->admin);
+        $before = $this->shareCard();
+
+        $this->put('/admin/profile', [
+            'name' => 'Mohammed Hamdy', 'title' => 'Staff Laravel Engineer',
+            'seo_title' => 'Hire a Laravel backend engineer',
+            'seo_description' => 'APIs, performance and cloud for growing products.',
+            'twitter_handle' => '@mo7amad',
+        ])->assertSessionHasNoErrors();
+
+        $this->get('/')
+            ->assertSee('<title>Hire a Laravel backend engineer</title>', false)
+            ->assertSee('content="APIs, performance and cloud for growing products."', false)
+            ->assertSee('<meta name="twitter:site" content="@mo7amad">', false);
+
+        // The title changed, so a new card was generated and the old one removed.
+        $after = $this->shareCard();
+        $this->assertNotSame($before, $after);
+        $this->assertFileDoesNotExist(public_path($before));
+        $this->assertFileExists(public_path($after));
+    }
+
+    public function test_invalid_twitter_handle_is_rejected(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->put('/admin/profile', ['name' => 'M', 'title' => 'T', 'twitter_handle' => 'not a handle!'])
+            ->assertSessionHasErrors('twitter_handle');
+    }
+
+    public function test_custom_share_image_replaces_the_generated_card(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->put('/admin/profile', [
+            'name' => 'M', 'title' => 'T',
+            'seo_image' => UploadedFile::fake()->image('share.jpg', 1200, 630),
+        ])->assertSessionHasNoErrors();
+
+        $image = Profile::current()->seo_image;
+        $this->get('/')->assertSee('<meta property="og:image" content="'.asset($image).'">', false);
+
+        File::delete(public_path($image));
+    }
+
+    private function shareCard(): string
+    {
+        preg_match('#images/social/card-[a-f0-9]{12}\.png#', $this->get('/')->getContent(), $m);
+
+        return $m[0];
+    }
+
     public function test_eye_picker_meta_is_normalised(): void
     {
         $this->actingAs($this->admin);

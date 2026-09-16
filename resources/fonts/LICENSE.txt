@@ -1,0 +1,2 @@
+Inter and Inter Tight - SIL Open Font License 1.1 (https://openfontlicense.org).
+Latin subsets, used only to render the social share card (App\Support\SocialCard).

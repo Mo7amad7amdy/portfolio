@@ -43,6 +43,62 @@
         </div>
     </section>
 
+    @php $shareImage = $seo->image(); @endphp
+    <section class="card form-card">
+        <h2>SEO &amp; social sharing</h2>
+        <p class="hint">What Google shows in search results, and the preview card people see when your link is shared on
+            LinkedIn, WhatsApp, Facebook, X, Telegram or Slack. Leave fields empty to use your name, title and tagline.</p>
+
+        <div class="seo-grid">
+            <div class="form-grid one">
+                <label class="field">
+                    <span>Search title <small data-count-for="seo_title">0 / 60</small></span>
+                    <input type="text" name="seo_title" maxlength="70" value="{{ old('seo_title', $profile->seo_title) }}" placeholder="{{ $profile->name }} — {{ $profile->title }}" data-count="60">
+                    @error('seo_title')<small class="error">{{ $message }}</small>@enderror
+                </label>
+                <label class="field">
+                    <span>Search description <small data-count-for="seo_description">0 / 160</small></span>
+                    <textarea name="seo_description" rows="3" maxlength="170" placeholder="{{ $seo->description() }}" data-count="160">{{ old('seo_description', $profile->seo_description) }}</textarea>
+                    @error('seo_description')<small class="error">{{ $message }}</small>@enderror
+                </label>
+                <label class="field">
+                    <span>X (Twitter) username <small>(optional)</small></span>
+                    <input type="text" name="twitter_handle" value="{{ old('twitter_handle', $profile->twitter_handle) }}" placeholder="@username">
+                    @error('twitter_handle')<small class="error">{{ $message }}</small>@enderror
+                </label>
+                <label class="field">
+                    <span>Custom share image <small>(optional · 1200×630 JPG/PNG · replaces the automatic card)</small></span>
+                    <input type="file" name="seo_image" accept="image/jpeg,image/png,image/webp" data-preview="prev-share">
+                    @error('seo_image')<small class="error">{{ $message }}</small>@enderror
+                </label>
+                @if ($profile->seo_image)
+                    <label class="check"><input type="checkbox" name="remove_seo_image" value="1"> Remove custom image and use the automatic card</label>
+                @endif
+            </div>
+
+            <div class="previews">
+                <p class="preview-label">Google preview</p>
+                <div class="serp">
+                    <div class="serp-site"><span class="serp-fav">{{ mb_substr($profile->name, 0, 1) }}</span><div><b>{{ $profile->name }}</b><small>{{ $seo->url() }}</small></div></div>
+                    <p class="serp-title" data-preview-text="seo_title" data-fallback="{{ $seo->title() }}">{{ $seo->title() }}</p>
+                    <p class="serp-desc" data-preview-text="seo_description" data-fallback="{{ $seo->description() }}">{{ $seo->description() }}</p>
+                </div>
+
+                <p class="preview-label">Share card {{ $profile->seo_image ? '(custom)' : '(generated automatically, updates when you save)' }}</p>
+                <div class="share">
+                    <img id="prev-share" src="{{ $shareImage['url'] ?? '' }}" alt="" @if(!$shareImage) hidden @endif>
+                    <div class="share-meta">
+                        <small>{{ parse_url($seo->url(), PHP_URL_HOST) }}</small>
+                        <b data-preview-text="seo_title" data-fallback="{{ $seo->title() }}">{{ $seo->title() }}</b>
+                    </div>
+                </div>
+                @if ($shareImage)
+                    <a class="hint" href="{{ $shareImage['url'] }}" target="_blank">Open full size ↗</a>
+                @endif
+            </div>
+        </div>
+    </section>
+
     <section class="card form-card">
         <h2>Photo &amp; CV</h2>
         <div class="upload-grid">
@@ -160,6 +216,21 @@
 @endsection
 
 @push('scripts')
+<script>
+    // SEO: character counters + live Google/share previews.
+    document.querySelectorAll('[data-count]').forEach((input) => {
+        const label = document.querySelector(`[data-count-for="${input.name}"]`);
+        const targets = document.querySelectorAll(`[data-preview-text="${input.name}"]`);
+        const update = () => {
+            const n = input.value.length, max = +input.dataset.count;
+            label.textContent = `${n} / ${max}`;
+            label.classList.toggle('over', n > max);
+            targets.forEach((t) => { t.textContent = input.value.trim() || t.dataset.fallback; });
+        };
+        input.addEventListener('input', update);
+        update();
+    });
+</script>
 <script>
     // Eye picker: click the portrait to place the left eye, then the right eye.
     (() => {

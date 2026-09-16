@@ -1,2 +1,5 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+
+# Add your real domain so search engines find the sitemap, e.g.:
+# Sitemap: https://your-domain.com/sitemap.xml

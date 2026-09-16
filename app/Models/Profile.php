@@ -21,6 +21,7 @@ class Profile extends Model
         'name', 'title', 'tagline', 'summary', 'email', 'phone', 'location',
         'linkedin_url', 'github_url', 'photo', 'hero_head', 'hero_body',
         'hero_portrait', 'hero_depth', 'hero_closed', 'hero_meta', 'cv_file', 'open_to_work',
+        'seo_title', 'seo_description', 'seo_image', 'twitter_handle',
     ];
 
     protected function casts(): array

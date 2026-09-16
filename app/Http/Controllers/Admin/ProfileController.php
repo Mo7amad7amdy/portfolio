@@ -23,11 +23,14 @@ class ProfileController extends Controller
         'hero_depth' => ['portrait', ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096']],
         'hero_closed' => ['portrait', ['nullable', 'image', 'mimes:png,webp', 'max:6144']],
         'cv_file' => ['cv', ['nullable', 'file', 'mimes:pdf', 'max:8192']],
+        'seo_image' => ['social', ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=600,min_height=315']],
     ];
 
     public function edit(): View
     {
-        return view('admin.profile', ['profile' => Profile::current()]);
+        $profile = Profile::current();
+
+        return view('admin.profile', ['profile' => $profile, 'seo' => \App\Support\Seo::for($profile)]);
     }
 
     public function update(Request $request): RedirectResponse
@@ -44,6 +47,10 @@ class ProfileController extends Controller
             'location' => ['nullable', 'string', 'max:120'],
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'github_url' => ['nullable', 'url', 'max:255'],
+            'seo_title' => ['nullable', 'string', 'max:70'],
+            'seo_description' => ['nullable', 'string', 'max:170'],
+            'twitter_handle' => ['nullable', 'string', 'max:32', 'regex:/^@?[A-Za-z0-9_]{1,30}$/'],
+            'remove_seo_image' => ['nullable', 'boolean'],
             'remove_hero_layers' => ['nullable', 'boolean'],
             'remove_living_portrait' => ['nullable', 'boolean'],
             'remove_hero_closed' => ['nullable', 'boolean'],
@@ -66,6 +73,13 @@ class ProfileController extends Controller
             $this->deleteUpload($profile->hero_closed);
             $data['hero_closed'] = null;
         }
+        if ($request->boolean('remove_seo_image')) {
+            $this->deleteUpload($profile->seo_image);
+            $data['seo_image'] = null;
+        }
+        if (filled($data['twitter_handle'] ?? null)) {
+            $data['twitter_handle'] = ltrim($data['twitter_handle'], '@');
+        }
         if ($request->boolean('remove_hero_closed')) {
             $this->deleteUpload($profile->hero_closed);
             $data['hero_closed'] = null;
@@ -87,7 +101,7 @@ class ProfileController extends Controller
         } else {
             unset($data['hero_meta']);
         }
-        unset($data['remove_hero_layers'], $data['remove_living_portrait'], $data['remove_hero_closed'], $data['portrait_focus']);
+        unset($data['remove_hero_layers'], $data['remove_living_portrait'], $data['remove_hero_closed'], $data['remove_seo_image'], $data['portrait_focus']);
 
         $profile->update($data);
 

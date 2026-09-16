@@ -23,13 +23,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $profile->name }} — {{ $profile->title }}</title>
-    <meta name="description" content="{{ $profile->tagline ?: $profile->title }}">
-    <meta property="og:title" content="{{ $profile->name }} — {{ $profile->title }}">
-    <meta property="og:description" content="{{ $profile->tagline }}">
-    @if ($photo)<meta property="og:image" content="{{ $photo }}">@endif
-    <meta name="theme-color" content="#e8e6e1">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316110e'/><text x='50%25' y='57%25' font-family='Arial' font-weight='700' font-size='26' text-anchor='middle' dominant-baseline='middle' fill='%23f2f1ee'>{{ $initials }}</text></svg>">
+    @include('partials.seo')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">

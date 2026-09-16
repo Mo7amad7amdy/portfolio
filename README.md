@@ -17,6 +17,21 @@ the portfolio files, then creates `.env`, the SQLite database, and seeds your CV
 → change it immediately in **Dashboard → Account**.
 You can also set `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` before running the seeder.
 
+### SEO & social sharing
+- **Page head:** title, description, canonical link, Open Graph (`profile` type) and X/Twitter large-image card tags.
+- **Structured data:** JSON-LD for `ProfilePage`, `Person` and `WebSite`. The `Person` entry includes your job, current employer, skills, languages, education, certifications and profile links.
+- **Share card:** a 1200×630 image built with PHP GD from your name, title, tagline, first three highlights and portrait (`app/Support/SocialCard.php`). The file name changes whenever the content changes, so LinkedIn, Facebook and X load the new preview. Upload your own image in the dashboard to replace it.
+- **Other files:** `/sitemap.xml`, `/site.webmanifest`, favicons in `public/images/icons`, and `robots.txt`, which blocks `/admin`.
+- **Dashboard → Profile & Photo → SEO & social sharing:** custom search title and description (with live Google and share previews), an X username and a custom share image.
+
+**After going live:**
+1. Set `APP_URL` to your real domain. The share card's domain chip, canonical link and absolute image URLs all use it.
+2. Add `Sitemap: https://your-domain/sitemap.xml` to `public/robots.txt`.
+3. Submit the sitemap in Google Search Console.
+4. Refresh the link preview in the LinkedIn Post Inspector (linkedin.com/post-inspector) and the Facebook Sharing Debugger (developers.facebook.com/tools/debug).
+
+The share card needs PHP's GD extension with FreeType (enabled in Laragon by default). Without it, the site shares your profile photo instead.
+
 ### Running without `/public` in the URL
 The project root has its own `.htaccess` and `index.php`, so these both work on Apache (Laragon, shared hosting):
 - `http://localhost/portfolio` (sub-folder)
