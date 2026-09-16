@@ -26,6 +26,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "public" / "images" / "portrait"
 MODEL_URL = "https://github.com/fabio-sim/Depth-Anything-ONNX/releases/download/v2.0.0/depth_anything_v2_vits.onnx"
+RIM = 0.0  # warm rim light strength (0.3 suits dark page designs)
 MODEL = Path(__file__).with_name("depth_anything_v2_vits.onnx")
 
 
@@ -177,9 +178,17 @@ def main(src_path: str) -> None:
     a8 = (alpha * 255).astype(np.uint8)
     inner = cv2.GaussianBlur(cv2.erode(a8, np.ones((3, 3), np.uint8), iterations=6), (0, 0), 6) / 255
     rim = (np.clip(alpha - inner, 0, 1) * np.linspace(1, 0, H)[:, None] ** 1.5)[..., None]
-    rgb = np.clip(rgb + rim * np.array([255, 190, 90]) * 0.32, 0, 255)
+    rgb = np.clip(rgb + rim * np.array([255, 190, 90]) * RIM, 0, 255)
+    # soft side edges (photo frames usually cut the arms) and a faded bottom-right corner
     xs = np.linspace(0, 1, W)
-    a = alpha * np.clip(np.minimum(xs, 1 - xs) / 0.06, 0, 1)[None, :]
+    side = np.clip(xs / 0.06, 0, 1) * np.clip((1 - xs) / 0.16, 0, 1) ** 1.4
+    yy = np.linspace(0, 1, H)[:, None]
+    corner = np.clip(1 - np.clip((xs[None, :] - 0.72) / 0.28, 0, 1) * np.clip((yy - 0.62) / 0.38, 0, 1) * 1.4, 0, 1)
+    # strip the thin back-lit rim on the lower-right (reads as a white line on light pages)
+    eroded = cv2.GaussianBlur(cv2.erode(alpha, np.ones((3, 3), np.uint8), iterations=7), (0, 0), 2)
+    zone = np.clip((xs[None, :] - 0.55) / 0.1, 0, 1) * np.clip((yy - 0.45) / 0.1, 0, 1)
+    alpha_c = alpha * (1 - zone) + np.minimum(alpha, eroded) * zone
+    a = alpha_c * side[None, :] * corner
     rgba = np.dstack([rgb, a * 255]).astype(np.uint8)
     size = (1000, round(H * 1000 / W))
     Image.fromarray(rgba).resize(size, Image.LANCZOS).save(OUT / "portrait.webp", quality=90, method=6)
