@@ -332,9 +332,22 @@ ul, ol, dl, dd { margin: 0; padding: 0; list-style: none; }
 .alert { padding: 12px 14px; border-radius: 10px; background: #e3f1e6; color: #1f6b36; font-size: 14px; }
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
+/* Social icons */
+.social-icons { display: flex; flex-wrap: wrap; gap: 8px; }
+.social-icons a {
+    display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255, 255, 255, .08); color: inherit; transition: background .2s, color .2s, transform .2s;
+}
+.social-icons a:hover { background: var(--accent); color: #fff; transform: translateY(-2px); }
+.social-icons svg { width: 17px; height: 17px; fill: currentColor; }
+.hero-socials { position: absolute; z-index: 4; right: var(--gutter); bottom: 36px; }
+.hero-socials a { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+.social-name { display: inline-flex; align-items: center; gap: 10px; }
+.social-name svg { width: 16px; height: 16px; fill: var(--ink); }
+
 /* Footer */
 .footer-panel { background: var(--ink); color: #d9d3cb; overflow: hidden; padding-top: 36px; }
-.footer-top { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 0 var(--gutter); font-size: 14px; }
+.footer-top { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; padding: 0 var(--gutter); font-size: 14px; }
 .footer-top nav { display: flex; gap: 28px; flex-wrap: wrap; }
 .footer-top a:hover { color: #fff; }
 .footer-word {
@@ -389,6 +402,7 @@ ul, ol, dl, dd { margin: 0; padding: 0; list-style: none; }
     .note-2 { right: -2%; top: 8%; }
     .note-3 { display: none; }
     .hero-cta { position: static; order: 1; margin: 24px var(--gutter) 0; align-self: flex-start; }
+    .hero-socials { position: static; order: 5; margin: 18px var(--gutter) 24px; }
     .hero-proof { position: relative; left: auto; order: 4; width: auto; margin: 0 var(--gutter); background: var(--panel); }
     .hero-intro { order: 0; }
 

@@ -9,6 +9,7 @@ use App\Models\Language;
 use App\Models\Profile;
 use App\Models\Project;
 use App\Models\Skill;
+use App\Models\SocialLink;
 use App\Models\Stat;
 use App\Support\Seo;
 use Illuminate\Contracts\View\View;
@@ -29,6 +30,7 @@ class PortfolioController extends Controller
             'certifications' => Certification::ordered()->get(),
             'educations' => Education::ordered()->get(),
             'languages' => Language::ordered()->get(),
+            'socials' => SocialLink::visible()->ordered()->get(),
         ]);
     }
 }

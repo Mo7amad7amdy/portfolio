@@ -9,6 +9,7 @@ use App\Models\Language;
 use App\Models\Profile;
 use App\Models\Project;
 use App\Models\Skill;
+use App\Models\SocialLink;
 use App\Models\Stat;
 use Illuminate\Database\Seeder;
 
@@ -46,6 +47,13 @@ class PortfolioSeeder extends Seeder
             'cv_file' => 'files/Mohammed-Hamdy-CV.pdf',
             'open_to_work' => true,
         ]);
+
+        foreach ([
+            ['linkedin', 'https://linkedin.com/in/mo7amad7amdy'],
+            ['github', 'https://github.com/mo7amad7amdy'],
+        ] as $i => [$platform, $url]) {
+            SocialLink::create(['platform' => $platform, 'url' => $url, 'sort_order' => $i]);
+        }
 
         foreach ([
             ['7+', 'Years building backends'],

@@ -19,6 +19,11 @@
     </section>
 
     <section class="stat-grid">
+        <a class="card stat" href="{{ route('admin.analytics') }}">
+            <span>Visitors today · 7 days</span>
+            <strong>{{ number_format($traffic['today']) }} · {{ number_format($traffic['week']) }}</strong>
+            @if ($traffic['topCountry'])<small class="muted">Top country: {{ $traffic['topCountry'] }}</small>@endif
+        </a>
         @foreach ($counts as [$label, $count, $route])
             <a class="card stat" href="{{ route($route) }}">
                 <span>{{ $label }}</span>

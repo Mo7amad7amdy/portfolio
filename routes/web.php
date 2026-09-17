@@ -1,12 +1,19 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Middleware\TrackVisit;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', PortfolioController::class)->name('home');
+Route::get('/', PortfolioController::class)->middleware(TrackVisit::class)->name('home');
+Route::post('/a/collect', [AnalyticsController::class, 'collect'])
+    ->withoutMiddleware(ValidateCsrfToken::class)
+    ->middleware('throttle:120,1')
+    ->name('analytics.collect');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/site.webmanifest', [SeoController::class, 'manifest'])->name('manifest');
 Route::post('/contact', [ContactController::class, 'store'])
@@ -23,6 +30,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('/logout', [Admin\AuthController::class, 'destroy'])->name('logout');
 
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
+    Route::get('/analytics', [Admin\AnalyticsController::class, 'index'])->name('analytics');
+    Route::get('/analytics/export', [Admin\AnalyticsController::class, 'export'])->name('analytics.export');
 
     Route::get('/profile', [Admin\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [Admin\ProfileController::class, 'update'])->name('profile.update');
@@ -37,6 +46,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::resource('certifications', Admin\CertificationController::class)->except('show');
     Route::resource('educations', Admin\EducationController::class)->except('show');
     Route::resource('languages', Admin\LanguageController::class)->except('show');
+    Route::resource('socials', Admin\SocialLinkController::class)->except('show');
 
     Route::resource('messages', Admin\MessageController::class)->only(['index', 'show', 'destroy']);
 });

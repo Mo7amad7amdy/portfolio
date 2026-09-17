@@ -11,8 +11,8 @@
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
     <link rel="canonical" href="{{ $seoUrl }}">
     <link rel="sitemap" type="application/xml" href="{{ route('sitemap') }}">
-    @foreach (array_filter([$profile->github_url, $profile->linkedin_url]) as $me)
-        <link rel="me" href="{{ $me }}">
+    @foreach ($socials as $social)
+        <link rel="me" href="{{ $social->url }}">
     @endforeach
 
     {{-- Open Graph: Facebook, LinkedIn, WhatsApp, Telegram, Slack, Discord --}}

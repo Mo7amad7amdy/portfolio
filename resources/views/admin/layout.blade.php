@@ -2,6 +2,7 @@
     $unreadCount = \App\Models\Message::unread()->count();
     $menu = [
         ['admin.dashboard', 'Dashboard', 'M3 12l9-8 9 8M5 10v10h14V10', 'admin.dashboard'],
+        ['admin.analytics', 'Analytics', 'M4 20V14M10 20V8M16 20V11M22 20V4', 'admin.analytics*'],
         ['admin.profile.edit', 'Profile & Photo', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9a8 8 0 0 1 16 0', 'admin.profile.*'],
         ['admin.stats.index', 'Hero highlights', 'M4 20V10M10 20V4M16 20v-7M22 20H2', 'admin.stats.*'],
         ['admin.experiences.index', 'Experience', 'M3 7h18v13H3zM8 7V4h8v3', 'admin.experiences.*'],
@@ -10,6 +11,7 @@
         ['admin.certifications.index', 'Certifications', 'M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm-4 0-2 7 6-3 6 3-2-7', 'admin.certifications.*'],
         ['admin.educations.index', 'Education', 'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5', 'admin.educations.*'],
         ['admin.languages.index', 'Languages', 'M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'admin.languages.*'],
+        ['admin.socials.index', 'Social links', 'M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1', 'admin.socials.*'],
         ['admin.messages.index', 'Messages', 'M4 4h16v12H7l-3 3z', 'admin.messages.*'],
         ['admin.account.edit', 'Account', 'M12 15v2m-6 4h12V11H6zm2-10V7a4 4 0 1 1 8 0v4', 'admin.account.*'],
     ];

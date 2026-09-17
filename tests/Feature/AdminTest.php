@@ -6,6 +6,7 @@ use App\Models\Experience;
 use App\Models\Message;
 use App\Models\Profile;
 use App\Models\Skill;
+use App\Models\SocialLink;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,7 +56,7 @@ class AdminTest extends TestCase
         $message = Message::create(['name' => 'A', 'email' => 'a@example.com', 'body' => 'Hello there, friend']);
 
         $pages = ['/admin', '/admin/profile', '/admin/account', '/admin/messages', "/admin/messages/{$message->id}"];
-        foreach (['stats', 'experiences', 'projects', 'skills', 'certifications', 'educations', 'languages'] as $resource) {
+        foreach (['socials', 'stats', 'experiences', 'projects', 'skills', 'certifications', 'educations', 'languages'] as $resource) {
             $pages[] = "/admin/{$resource}";
             $pages[] = "/admin/{$resource}/create";
         }
@@ -188,6 +189,38 @@ class AdminTest extends TestCase
         $this->get('/')->assertDontSee('data-closed=', false);
 
         File::delete(public_path($profile->hero_portrait));
+    }
+
+    public function test_social_link_from_username_is_normalised_and_shown(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->post('/admin/socials', ['platform' => 'instagram', 'url' => '@itsHamdiko', 'is_visible' => '1', 'sort_order' => 0])
+            ->assertRedirect(route('admin.socials.index'))
+            ->assertSessionHasNoErrors();
+
+        $link = SocialLink::where('platform', 'instagram')->firstOrFail();
+        $this->assertSame('https://instagram.com/itsHamdiko', $link->url);
+        $this->assertSame('@itsHamdiko', $link->display);
+
+        $html = $this->get('/')->assertOk()->getContent();
+        $this->assertStringContainsString('href="https://instagram.com/itsHamdiko"', $html);
+        $this->assertStringContainsString('<link rel="me" href="https://instagram.com/itsHamdiko">', $html);
+        $this->assertStringContainsString('"https://instagram.com/itsHamdiko"', $html); // schema.org sameAs
+
+        // Hidden links disappear from the site.
+        $this->put("/admin/socials/{$link->id}", ['platform' => 'instagram', 'url' => $link->url, 'is_visible' => '0']);
+        $this->get('/')->assertDontSee('instagram.com/itsHamdiko', false);
+    }
+
+    public function test_whatsapp_number_and_invalid_platform(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->post('/admin/socials', ['platform' => 'whatsapp', 'url' => '+20 111 895 2279', 'is_visible' => '1']);
+        $this->assertDatabaseHas('social_links', ['url' => 'https://wa.me/201118952279']);
+
+        $this->post('/admin/socials', ['platform' => 'myspace', 'url' => 'x'])->assertSessionHasErrors('platform');
     }
 
     public function test_seo_fields_are_saved_and_used(): void

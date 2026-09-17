@@ -16,8 +16,6 @@
                 'email' => ['Public email', 'email'],
                 'phone' => ['Phone / WhatsApp', 'text'],
                 'location' => ['Location', 'text'],
-                'linkedin_url' => ['LinkedIn URL', 'url'],
-                'github_url' => ['GitHub URL', 'url'],
             ] as $field => [$label, $type])
                 <label class="field">
                     <span>{{ $label }}</span>
@@ -30,6 +28,7 @@
                 <input type="checkbox" name="open_to_work" value="1" @checked(old('open_to_work', $profile->open_to_work))>
                 Show “Available for new projects” badge
             </label>
+            <p class="hint wide">Instagram, LinkedIn, GitHub and your other accounts are managed in <a href="{{ route('admin.socials.index') }}">Social links</a>.</p>
             <label class="field wide">
                 <span>Tagline <small>(one sentence under your title)</small></span>
                 <input type="text" name="tagline" value="{{ old('tagline', $profile->tagline) }}" maxlength="255">

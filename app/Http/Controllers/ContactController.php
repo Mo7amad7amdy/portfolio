@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\Visit;
+use App\Models\VisitEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -23,6 +25,10 @@ class ContactController extends Controller
         ]);
 
         Message::create($data + ['ip' => $request->ip()]);
+
+        if (is_string($request->input('_visit')) && ($visit = Visit::where('uuid', $request->input('_visit'))->first())) {
+            VisitEvent::create(['visit_id' => $visit->id, 'name' => 'contact_submit', 'created_at' => now()]);
+        }
 
         return redirect()->to(route('home').'#contact')->with('contact_status', 'Thanks! Your message has been sent.');
     }

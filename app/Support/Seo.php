@@ -8,6 +8,7 @@ use App\Models\Experience;
 use App\Models\Language;
 use App\Models\Profile;
 use App\Models\Skill;
+use App\Models\SocialLink;
 use App\Models\Stat;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -53,6 +54,9 @@ class Seo
     public function twitter(): ?string
     {
         $h = trim((string) $this->profile->twitter_handle);
+        if ($h === '' && ($x = SocialLink::visible()->where('platform', 'x')->value('url'))) {
+            $h = basename(parse_url($x, PHP_URL_PATH) ?: '');
+        }
 
         return $h === '' ? null : '@'.ltrim($h, '@');
     }
@@ -116,7 +120,9 @@ class Seo
     {
         $p = $this->profile;
         $current = Experience::ordered()->first();
-        $same = array_values(array_filter([$p->linkedin_url, $p->github_url]));
+        $same = SocialLink::visible()->ordered()->pluck('url')
+            ->merge([$p->linkedin_url, $p->github_url])
+            ->filter()->unique()->values()->all();
 
         $person = array_filter([
             '@type' => 'Person',

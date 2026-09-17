@@ -17,6 +17,44 @@ the portfolio files, then creates `.env`, the SQLite database, and seeds your CV
 → change it immediately in **Dashboard → Account**.
 You can also set `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` before running the seeder.
 
+### Analytics (Dashboard → Analytics)
+First-party visitor analytics. No Google Analytics and no third-party scripts.
+
+**What is recorded for each home-page view:**
+- **Location:** country, region and city, found in a local DB-IP database (plus Cloudflare headers when the site is behind Cloudflare).
+- **Language:** browser language and locale, plus the visitor's timezone.
+- **Source:** where the visit came from (Google, Instagram, LinkedIn, Direct…), including Instagram, Facebook and LinkedIn in-app browsers, the referring site and `utm_*` campaign tags.
+- **Device:** device type, OS, browser and version, screen size.
+- **Engagement:** new or returning visitor, active time on the page, scroll depth and which sections were reached.
+- **Actions:** CV downloads, social, project, email and WhatsApp clicks, and contact form submissions.
+- **Bots:** flagged separately and hidden by default.
+
+**Dashboard:** date ranges from Today to Since launch, comparison with the previous period, a daily or monthly chart, time of day, breakdowns you can click to filter everything, a live "online now" counter, a paginated visit log and a CSV export.
+
+**Privacy:**
+- IPs are stored anonymised (last IPv4 part removed).
+- Visitors get one first-party cookie (`_vid`) to tell new from returning.
+- Your own visits aren't counted while logged in. Open `/?notrack=1` once on your other devices to exclude them too.
+- Settings are in `config/analytics.php` (`ANALYTICS_*` in `.env`).
+
+**Setup on the server:**
+```bash
+php artisan migrate --force
+php artisan analytics:geoip              # downloads the free DB-IP city database (~130 MB)
+php artisan analytics:backfill-geo       # adds locations to visits recorded before the database existed
+```
+If the server can't download it, get "IP to City Lite (MMDB)" from https://db-ip.com/db/download/ip-to-city-lite and run
+`php artisan analytics:geoip --file=dbip-city-lite-YYYY-MM.mmdb.gz`. Refresh it monthly with a cron job, e.g.
+`0 4 2 * * cd /path/to/project && php artisan analytics:geoip`.
+
+**Visits from before tracking was installed** can only come from your server's access logs:
+```bash
+php artisan analytics:import-log ~/logs/access.log ~/logs/access.log.*.gz --dry-run
+php artisan analytics:import-log ~/logs/access.log ~/logs/access.log.*.gz
+```
+Only home-page views older than the first tracked visit are imported, and running it twice doesn't duplicate rows.
+Imported visits have location, source and device, but no language, time on page or clicks, because logs don't contain those.
+
 ### SEO & social sharing
 - **Page head:** title, description, canonical link, Open Graph (`profile` type) and X/Twitter large-image card tags.
 - **Structured data:** JSON-LD for `ProfilePage`, `Person` and `WebSite`. The `Person` entry includes your job, current employer, skills, languages, education, certifications and profile links.

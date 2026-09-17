@@ -127,6 +127,14 @@
                 </p>
             </div>
 
+            @if ($socials->isNotEmpty())
+                <ul class="social-icons hero-socials" aria-label="Social media">
+                    @foreach ($socials->take(6) as $social)
+                        <li><a href="{{ $social->url }}" target="_blank" rel="noopener me" aria-label="{{ $social->name }}" title="{{ $social->name }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="{{ $social->icon }}"/></svg></a></li>
+                    @endforeach
+                </ul>
+            @endif
+
             <a href="#work" class="btn btn-accent hero-cta">See my work</a>
 
             @if ($featured)
@@ -338,9 +346,15 @@
                     <a class="contact-mail" href="mailto:{{ $profile->email }}">{{ Str::lower($profile->email) }} <span aria-hidden="true">↗</span></a>
                 @endif
                 <ul class="contact-links">
-                    @if ($profile->phone)<li><span>WhatsApp</span><a href="https://wa.me/{{ preg_replace('/\D+/', '', $profile->phone) }}" target="_blank" rel="noopener">{{ $profile->phone }}</a></li>@endif
-                    @if ($profile->linkedin_url)<li><span>LinkedIn</span><a href="{{ $profile->linkedin_url }}" target="_blank" rel="noopener">{{ $host($profile->linkedin_url) }}</a></li>@endif
-                    @if ($profile->github_url)<li><span>GitHub</span><a href="{{ $profile->github_url }}" target="_blank" rel="noopener">{{ $host($profile->github_url) }}</a></li>@endif
+                    @if ($profile->phone && ! $socials->contains('platform', 'whatsapp'))
+                        <li><span>WhatsApp</span><a href="https://wa.me/{{ preg_replace('/\D+/', '', $profile->phone) }}" target="_blank" rel="noopener">{{ $profile->phone }}</a></li>
+                    @endif
+                    @foreach ($socials as $social)
+                        <li>
+                            <span class="social-name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="{{ $social->icon }}"/></svg>{{ $social->name }}</span>
+                            <a href="{{ $social->url }}" target="_blank" rel="noopener me">{{ $social->display }}</a>
+                        </li>
+                    @endforeach
                 </ul>
             </div>
 
@@ -380,6 +394,13 @@
     <div class="panel footer-panel">
         <div class="footer-top">
             <p>© {{ date('Y') }} {{ $profile->name }}</p>
+            @if ($socials->isNotEmpty())
+                <ul class="social-icons" aria-label="Social media">
+                    @foreach ($socials as $social)
+                        <li><a href="{{ $social->url }}" target="_blank" rel="noopener me" aria-label="{{ $social->name }}" title="{{ $social->name }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="{{ $social->icon }}"/></svg></a></li>
+                    @endforeach
+                </ul>
+            @endif
             <nav>
                 <a href="#about">About</a>
                 <a href="#work">Work</a>
@@ -391,6 +412,9 @@
     </div>
 </footer>
 
+@if ($visitUuid = request()->attributes->get('analytics.uuid'))
+<script src="{{ asset('js/track.js') }}?v={{ filemtime(public_path('js/track.js')) }}" data-visit="{{ $visitUuid }}" data-endpoint="{{ route('analytics.collect') }}" defer></script>
+@endif
 @if ($heroMode === 'living')
 <script src="{{ asset('js/living-portrait.js') }}?v={{ filemtime(public_path('js/living-portrait.js')) }}" defer></script>
 @endif
